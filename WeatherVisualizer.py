@@ -1,38 +1,42 @@
-import matplotlib.pyplot as plt
 import requests
+from flask import Flask, jsonify
+from flask_cors import CORS
 
-api_key = 'cd2e63c3c1fc41a9af6102958221307'
-api_url = 'http://api.weatherapi.com/v1/current.json?key=cd2e63c3c1fc41a9af6102958221307&q=Kyiv&aqi=no'
+app = Flask(__name__)
+CORS(app)
 
-headers = {
-    'Authorization': f'Bearer {api_key}',
-    'Content-Type': 'application/json',
-}
+@app.route('/api/weather-chart')
+def weather_chart():
+    api_key = 'cd2e63c3c1fc41a9af6102958221307'
+    api_url = 'http://api.weatherapi.com/v1/current.json?key=cd2e63c3c1fc41a9af6102958221307&q=Kyiv&aqi=no'
 
-try:
-    response = requests.get(api_url, headers=headers)
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json',
+    }
 
-    if response.status_code == 200:
-        data = response.json()
+    try:
+        response = requests.get(api_url, headers=headers)
 
-        # Извлечение данных для визуализации (пример: температура)
-        temperature_c = data['current']['temp_c']
-        feelslike_c = data['current']['feelslike_c']
+        if response.status_code == 200:
+            data = response.json()
 
-        # Визуализация
-        labels = ['Макс лох', 'Макс крутой']
-        values = [temperature_c, feelslike_c]
+            # Извлечение данных для визуализации
+            temperature_c = data['current']['temp_c']
+            feelslike_c = data['current']['feelslike_c']
 
-        colors = ['blue', 'red']  # Specify colors for each bar
+            # Подготовка данных для диаграммы
+            labels = ['Temp', 'feels like']
+            values = [temperature_c, feelslike_c]
+            colors = ['blue', 'red']
 
-        plt.bar(labels, values, color=colors)
-        plt.title('Температура в Киеве')
-        plt.xlabel('Показатель')
-        plt.ylabel('Температура (°C)')
-        plt.show()
+            return jsonify({'labels': labels, 'values': values, 'colors': colors})
 
-    else:
-        print(f'Ошибка запроса: {response.status_code}, {response.text}')
+        else:
+            return jsonify({'error': f'Ошибка запроса: {response.status_code}, {response.text}'})
 
-except Exception as e:
-    print(f'Произошла ошибка: {e}')
+    except Exception as e:
+        return jsonify({'error': f'Произошла ошибка: {e}'})
+
+if __name__ == '__main__':
+    app.run(debug=True)
